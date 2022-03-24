@@ -1,3 +1,5 @@
+# fork from git@github.com:liuslnlp/CoupletAI.git
+改善了对对联时不符合对联规则的部分现象
 # CoupletAI
 用 PyTorch 实现的自动对对联系统，支持多种模型。一般来讲，给定一句话生成另一句话是序列生成问题，本项目根据上下联字数相等的特点将其转化为序列标注问题，即用下联去标注上联。  
 ## Dependencies

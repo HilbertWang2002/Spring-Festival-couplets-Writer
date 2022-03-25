@@ -1,5 +1,5 @@
 *.bak
-./CoupletAI/runs/*
-./CoupletAI/main.py
-./CoupletAI/preprocess.py
-./CoupletAI/webdemo.py
+./Couplet/runs/*
+./Couplet/main.py
+./Couplet/preprocess.py
+./Couplet/webdemo.py

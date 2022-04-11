@@ -2,4 +2,3 @@
 ./Couplet/runs/*
 ./Couplet/main.py
 ./Couplet/preprocess.py
-./Couplet/webdemo.py

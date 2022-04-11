@@ -10,7 +10,7 @@ MODEL_PATH = sys.argv[1]
 
 class Context(object):
     def __init__(self, path):
-        path = r'output\Transformer_10.bin'
+        path = MODEL_PATH
         print(f"loading pretrained model from {path}")
         self.device = torch.device('cpu')
         model_info = torch.load(path)
@@ -18,7 +18,7 @@ class Context(object):
         self.model = init_model_by_key(model_info['args'], self.tokenizer)
         self.model.load_state_dict(model_info['model'])
         self.model.to(self.device)
-        self.model.eval()
+        #self.model.eval()
 
     def predict(self, s):
         input_ids = torch.tensor(self.tokenizer.encode(s)).unsqueeze(0).to(self.device)
@@ -31,9 +31,31 @@ class Context(object):
 app = Flask(__name__)
 ctx = Context(MODEL_PATH)
 
+def generate_my_hash(c):
+    result = ''
+    count = 0
+    my_dict = {}
+    for i in c:
+        if i not in my_dict.keys():
+            result += str(count)
+            my_dict[i] = count
+            count += 1
+        else:
+            result += str(my_dict[i])
+    return result
+            
+
 @app.route('/<coupletup>')
 def api(coupletup):
-    return ctx.predict(coupletup)
+    input_hash = generate_my_hash(coupletup)
+    for i in range(3000):
+        output = ctx.predict(coupletup)
+        output_hash = generate_my_hash(output)
+        if input_hash == output_hash and len(set(coupletup)&set(output))==0:
+            #print(coupletup, input_hash, output, output_hash, len(set(coupletup)&set(output)))
+            return output
+    return 'Failed'
+    
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -46,4 +68,4 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run(host='localhost', port=12345)

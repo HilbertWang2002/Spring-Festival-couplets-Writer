@@ -70,7 +70,7 @@ def encode_decode(tokenizer, question, model, lens, device):
         #print(f"下联：{pred}")
         return pred
         isGo=False
-        return
+       # return
 
                 # goto .begin1
 
@@ -112,6 +112,21 @@ def run_couplet(question):
         #         if pred[same[i][0]]!=pred[same[i][1]]:
         #             encode_decode(tokenizer, question, model)
         #             # goto .begin1
+        
+
+from flask import Flask
+from flask import request
+
+app = Flask(__name__)
+
+@app.route('/couplet', methods=['GET',])
+def duilian():
+    data = request.values.to_dict()['c']
+    print(data, type(data))
+    result = run_couplet('一行白鹭上青天')
+    print(type(result))
+    return '1'
 
 if __name__ == "__main__":
-    print(run_couplet(input("上联：")))
+    print(run_couplet('一行白鹭上青天'))
+    app.run(host='127.0.0.1', port=12345)

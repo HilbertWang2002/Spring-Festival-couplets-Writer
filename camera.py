@@ -14,8 +14,12 @@ class CameraModule():
             cv2.imshow(winName , im_gray/255)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-        
-
+    
+    def get_camera_frame(self, file_name):
+        s, im = self.cam.read()
+        if file_name:
+            return cv2.imwrite(file_name, im)
+        return im
 if __name__ == '__main__':
     cam = CameraModule(1)
     cam.camera_test()

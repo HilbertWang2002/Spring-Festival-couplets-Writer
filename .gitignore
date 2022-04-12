@@ -2,3 +2,4 @@
 ./Couplet/runs/*
 ./Couplet/main.py
 ./Couplet/preprocess.py
+./temp/*

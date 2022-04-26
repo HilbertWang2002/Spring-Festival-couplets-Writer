@@ -6,9 +6,13 @@ import os                   # 加载os
 import json
 import time
 import math
+import camera
+import cv2
+import couplet_ocr
 
+stroke_count = 0
 RDK = Robolink(args='RobotWorkstation.rdk')            # 定义RoboDK工作站
-
+cam = camera.CameraModule(2)
 path_stationfile = RDK.getParam('PATH_OPENSTATION')     # 获取当前工作站的路径
 sys.path.append(os.path.abspath(path_stationfile))      # 将当前工作站的路径添加到系统路径中
 from d import pen_track
@@ -42,12 +46,13 @@ def point2D_2_pose2(point, tangent):
 def write_robot(list, item_frame, item_tool, robot):
     APPROACH = 70                                    # 定义常量APPROACH为100     
     orient_frame2tool = roty(pi)
-
+    global stroke_count
     x = None
     y = None
     for p in list:
-        x = p[0]*150/1024
-        y = p[1]*150/1024
+        size = 150
+        y = p[0]*size/1024
+        x = size - p[1]*size/1024
         if p[3]==0 or p[3]==2:
             target0 = transl(x, y, 20)*orient_frame2tool         # 将p_0转化为机器人目标点target_0(4*4矩阵)
         elif p[3]==1:
@@ -58,12 +63,42 @@ def write_robot(list, item_frame, item_tool, robot):
         target0_app = target0*transl(0,0,-APPROACH)             # 定义目标点：target0_app
         print(str(target0_app))
 #        raise Exception
-        robot.MoveL(target0_app)    
+        robot.MoveL(target0_app)
+        if p[3]==2:
+            stroke_count += 1
+            print(stroke_count)
+    
+def dip(item_frame, item_tool, robot):
+    home_joints = [-45,-90,-70,-90,90,0] 
+    APPROACH = 140
+    orient_frame2tool = roty(pi)
+    robot.MoveJ(home_joints)
+    # go down
+    x = -120
+    y = -50
+    target = transl(x, y, -APPROACH)*orient_frame2tool
+    robot.MoveL(target)
+    
+    # rotate
+    target1 = transl(x+10, y+20, -APPROACH+20)*orient_frame2tool
+    target1 = target1*rotz(1.0)
+    robot.MoveL(target1)
+    target = transl(x, y-20, -APPROACH+22)*orient_frame2tool
+    robot.MoveL(target)
+    target1 = transl(x+10, y+20, -APPROACH+24)*orient_frame2tool
+    target1 = target1*rotz(-1.0)
+    robot.MoveL(target1)
+    target = transl(x, y-20, -APPROACH+26)*orient_frame2tool
+    robot.MoveL(target)
+    target1 = transl(x+10, y+20, -APPROACH+28)*orient_frame2tool
+    target1 = target1*rotz(1.0)
+    robot.MoveL(target1)
+    time.sleep(2)
+    
+    # lift
+    robot.MoveL(home_joints)
 
 
-    last_target = transl(x, y, 30)*orient_frame2tool
-    last_target_app = last_target*transl(0,0,-APPROACH)
-    robot.MoveL(last_target_app)
 
     # robot.MoveL(home_joints) 
 
@@ -72,7 +107,7 @@ def write_robot(list, item_frame, item_tool, robot):
 
 #c = input('请输入对联：')
     
-from flask import Flask, request
+from flask import Flask, request, render_template
 import requests
 app = Flask(__name__)
 robot_busy = False
@@ -136,6 +171,9 @@ def write(c):
     else:
         robot_busy = True
     for s in c:
+        if s == " ":
+            time.sleep(10)
+            continue
         print(s)
         a = pen_track(s)
         if a is None:
@@ -159,6 +197,30 @@ def couplet():
             return 'Robot is busy.'
     return finished
 
+@app.route('/dip')
+def dip1():
+    global robot_busy
+    if robot_busy:
+        return 'Robot is busy.'
+    else:
+        robot_busy = True
+    
+    dip(write_frame, write_tool, robot)
+    
+    
+    robot_busy = False
+    return 'finished'
+
+@app.route('/ocr')
+def ocr():
+    global cam
+    s = couplet_ocr.ocr_current_camera(cam)
+    print(s)
+    r = requests.get(f'http://localhost:12345/{s}')
+    if r.status_code == 200 and r.text != 'Failed':
+        result = r.text
+        return render_template('./tem.html', s=s+' '+result)
+    return r.text
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

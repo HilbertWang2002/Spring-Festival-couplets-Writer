@@ -11,19 +11,22 @@ import cv2
 import couplet_ocr
 
 stroke_count = 0
-RDK = Robolink(args='RobotWorkstation.rdk')            # 定义RoboDK工作站
-cam = camera.CameraModule(2)
+RDK = Robolink(args='tjk.rdk')            # 定义RoboDK工作站
+cam = camera.CameraModule(1)
 path_stationfile = RDK.getParam('PATH_OPENSTATION')     # 获取当前工作站的路径
 sys.path.append(os.path.abspath(path_stationfile))      # 将当前工作站的路径添加到系统路径中
 from d import pen_track
 
 # 定义工作站中的对象
 robot = RDK.Item('UR3')            # 定义机器人对象
-write_frame = RDK.Item('绘图坐标系')              # 定义写字坐标系：write_frame
+write_frame = RDK.Item('坐标系')              # 定义写字坐标系：write_frame
 write_tool = RDK.Item('书写工具')                    # 定义写字工具
 pixel = RDK.Item('像素点')                        # 定义写字像素点
 image_template = RDK.Item('模板')                 # 定义画板的模板
 image = RDK.Item('画板')                          # 预定义工作站的画板
+
+robot.setPoseFrame(write_frame)                              # 定义机器人的工件坐标系
+robot.setPoseTool(write_tool)                                # 定义机器人的工具坐标系
 
 ######## 定义函数 ###########
 
@@ -44,19 +47,21 @@ def point2D_2_pose2(point, tangent):
     return transl(point.x, point.y, )*rotz(tangent.angle())
 
 def write_robot(list, item_frame, item_tool, robot):
-    APPROACH = 70                                    # 定义常量APPROACH为100     
+    APPROACH = 60                                # 定义常量APPROACH为100     
     orient_frame2tool = roty(pi)
     global stroke_count
     x = None
     y = None
     for p in list:
-        size = 150
-        y = p[0]*size/1024
-        x = size - p[1]*size/1024
+        size = 120
+        x = p[0]*size/1024
+        y = p[1]*size/1024
+        #y = p[0]*size/1024
+        #x = size - p[1]*size/1024
         if p[3]==0 or p[3]==2:
             target0 = transl(x, y, 20)*orient_frame2tool         # 将p_0转化为机器人目标点target_0(4*4矩阵)
         elif p[3]==1:
-            z = (3.8-math.log(p[2]))*2
+            z = 3+(3.8-math.log(p[2]))*2-p[2]*0.07
             if z<0:
                 z = 0
             target0=transl(x, y, z)*orient_frame2tool
@@ -74,31 +79,34 @@ def dip(item_frame, item_tool, robot):
     orient_frame2tool = roty(pi)
     robot.MoveJ(home_joints)
     # go down
-    x = -120
-    y = -50
+    x = -150
+    y = -200
     target = transl(x, y, -APPROACH)*orient_frame2tool
     robot.MoveL(target)
     
     # rotate
-    target1 = transl(x+10, y+20, -APPROACH+20)*orient_frame2tool
-    target1 = target1*rotz(1.0)
+    target1 = transl(x+40, y+50, -APPROACH+20)*orient_frame2tool
+    # target1 = target1*rotz(1.0)
     robot.MoveL(target1)
-    target = transl(x, y-20, -APPROACH+22)*orient_frame2tool
+    target = transl(x-40, y-50, -APPROACH+22)*orient_frame2tool
     robot.MoveL(target)
-    target1 = transl(x+10, y+20, -APPROACH+24)*orient_frame2tool
-    target1 = target1*rotz(-1.0)
+    target1 = transl(x+40, y+50, -APPROACH+24)*orient_frame2tool
+    # target1 = target1*rotz(-1.0)
     robot.MoveL(target1)
-    target = transl(x, y-20, -APPROACH+26)*orient_frame2tool
+    target = transl(x-40, y-50, -APPROACH+26)*orient_frame2tool
     robot.MoveL(target)
-    target1 = transl(x+10, y+20, -APPROACH+28)*orient_frame2tool
-    target1 = target1*rotz(1.0)
+    target1 = transl(x+40, y+50, -APPROACH+28)*orient_frame2tool
+    # target1 = target1*rotz(1.0)
     robot.MoveL(target1)
     time.sleep(2)
     
     # lift
     robot.MoveL(home_joints)
+    
+    # lift
+    #robot.MoveL(home_joints)
 
-
+    
 
     # robot.MoveL(home_joints) 
 
@@ -158,19 +166,23 @@ def connect():
 def inititial():
     home_joints = [-45,-90,-70,-90,90,0]                                # 定义机器人的起始位置
   # home_joints = [0,0,15,-90,90,0]     
-    robot.setPoseFrame(write_frame)                              # 定义机器人的工件坐标系
-    robot.setPoseTool(write_tool)                                # 定义机器人的工具坐标系
     robot.MoveJ(home_joints)
     return 'Success'
             
 @app.route('/write/<c>')
 def write(c):
     global robot_busy
+    global stroke_count
     if robot_busy:
         return 'Robot is busy.'
     else:
         robot_busy = True
+    dip1()
     for s in c:
+        print('write',stroke_count)
+        if stroke_count>=15:
+            stroke_count = 0
+            dip1()
         if s == " ":
             time.sleep(10)
             continue
@@ -199,21 +211,26 @@ def couplet():
 
 @app.route('/dip')
 def dip1():
-    global robot_busy
-    if robot_busy:
-        return 'Robot is busy.'
-    else:
-        robot_busy = True
-    
+    print('dip')
     dip(write_frame, write_tool, robot)
+    return '1'
     
-    
-    robot_busy = False
-    return 'finished'
 
 @app.route('/ocr')
 def ocr():
     global cam
+    winName = 'image'
+    cv2.namedWindow(winName, cv2.WINDOW_AUTOSIZE)
+    start_time = time.time()
+    while(1):
+        ret, frame = cam.cam.read()
+        if not ret:
+            break
+        cv2.imshow(winName , frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        if time.time()-start_time >= 5:
+            break
     s = couplet_ocr.ocr_current_camera(cam)
     print(s)
     r = requests.get(f'http://localhost:12345/{s}')

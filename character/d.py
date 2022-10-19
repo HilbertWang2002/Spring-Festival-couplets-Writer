@@ -11,6 +11,8 @@ svg_temp = 'temp/temp.svg'
 png_temp = 'temp/temp.png'
 show_every_step = False
 
+os.makedirs('temp', exist_ok=True)
+
 with open(os.path.join(os.path.dirname(__file__), 'graphics.txt'), 'r', encoding='utf-8') as f:
 	data = f.readlines()
 aa = []

@@ -2,6 +2,5 @@
 ./Couplet/runs/*
 ./Couplet/main.py
 ./Couplet/preprocess.py
-./temp/*
-./__pycache__
+./temp
 **/__pycache__

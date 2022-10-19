@@ -3,3 +3,4 @@
 ./Couplet/main.py
 ./Couplet/preprocess.py
 ./temp/*
+**/__pycache__

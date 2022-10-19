@@ -11,7 +11,7 @@ svg_temp = 'temp/temp.svg'
 png_temp = 'temp/temp.png'
 show_every_step = False
 
-with open('graphics.txt', 'r', encoding='utf-8') as f:
+with open(os.path.join(os.path.dirname(__file__), 'graphics.txt'), 'r', encoding='utf-8') as f:
 	data = f.readlines()
 aa = []
 for i in data:

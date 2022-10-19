@@ -6,16 +6,16 @@ import os                   # 加载os
 import json
 import time
 import math
-import camera
+import vision.camera as camera
 import cv2
-import couplet_ocr
+import vision.couplet_ocr as couplet_ocr
 
 stroke_count = 0
-RDK = Robolink(args='tjk.rdk')            # 定义RoboDK工作站
+RDK = Robolink(args='RobotWorkstation.rdk')            # 定义RoboDK工作站
 cam = camera.CameraModule(1)
 path_stationfile = RDK.getParam('PATH_OPENSTATION')     # 获取当前工作站的路径
 sys.path.append(os.path.abspath(path_stationfile))      # 将当前工作站的路径添加到系统路径中
-from d import pen_track
+from character.d import pen_track
 
 # 定义工作站中的对象
 robot = RDK.Item('UR3')            # 定义机器人对象
@@ -47,13 +47,13 @@ def point2D_2_pose2(point, tangent):
     return transl(point.x, point.y, )*rotz(tangent.angle())
 
 def write_robot(list, item_frame, item_tool, robot):
-    APPROACH = 60                                # 定义常量APPROACH为100     
+    APPROACH = 78                               # 定义常量APPROACH为100     
     orient_frame2tool = roty(pi)
     global stroke_count
     x = None
     y = None
     for p in list:
-        size = 120
+        size = 90
         x = p[0]*size/1024
         y = p[1]*size/1024
         #y = p[0]*size/1024
@@ -75,7 +75,7 @@ def write_robot(list, item_frame, item_tool, robot):
     
 def dip(item_frame, item_tool, robot):
     home_joints = [-45,-90,-70,-90,90,0] 
-    APPROACH = 140
+    APPROACH = 125  
     orient_frame2tool = roty(pi)
     robot.MoveJ(home_joints)
     # go down
@@ -149,7 +149,7 @@ def connect():
     if RDK.RunMode() != RUNMODE_SIMULATE:
         return 'Already connected.'
     else:
-        robot.setConnectionParams('192.168.1.2',2000,'/programs/', 'root','easybot')
+        robot.setConnectionParams('192.168.1.112',2000,'/programs/', 'root','easybot')
         #robot.setConnectionParams('192.168.1.3',2000,)
         success = robot.Connect()
         status, status_msg = robot.ConnectedState()

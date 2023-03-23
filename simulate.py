@@ -47,17 +47,17 @@ def point2D_2_pose2(point, tangent):
     return transl(point.x, point.y, )*rotz(tangent.angle())
 
 def write_robot(list, item_frame, item_tool, robot):
-    APPROACH = 78                               # 定义常量APPROACH为100     
+    APPROACH = -25                              # 定义常量APPROACH为100     
     orient_frame2tool = roty(pi)
     global stroke_count
     x = None
     y = None
     for p in list:
-        size = 90
-        x = p[0]*size/1024
-        y = p[1]*size/1024
-        #y = p[0]*size/1024
-        #x = size - p[1]*size/1024
+        size = 120
+        #x = p[0]*size/1024
+        #y = p[1]*size/1024
+        y = p[0]*size/1024
+        x = size - p[1]*size/1024
         if p[3]==0 or p[3]==2:
             target0 = transl(x, y, 20)*orient_frame2tool         # 将p_0转化为机器人目标点target_0(4*4矩阵)
         elif p[3]==1:
@@ -75,7 +75,7 @@ def write_robot(list, item_frame, item_tool, robot):
     
 def dip(item_frame, item_tool, robot):
     home_joints = [-45,-90,-70,-90,90,0] 
-    APPROACH = 125  
+    APPROACH = 64
     orient_frame2tool = roty(pi)
     robot.MoveJ(home_joints)
     # go down
@@ -149,7 +149,7 @@ def connect():
     if RDK.RunMode() != RUNMODE_SIMULATE:
         return 'Already connected.'
     else:
-        robot.setConnectionParams('192.168.1.112',2000,'/programs/', 'root','easybot')
+        robot.setConnectionParams('192.168.1.142',2000,'/programs/', 'root','easybot')
         #robot.setConnectionParams('192.168.1.3',2000,)
         success = robot.Connect()
         status, status_msg = robot.ConnectedState()
@@ -207,7 +207,7 @@ def couplet():
         time.sleep(10)
         if write(r.text)=='Robot is busy.':
             return 'Robot is busy.'
-    return finished
+    return 'finished'
 
 @app.route('/dip')
 def dip1():

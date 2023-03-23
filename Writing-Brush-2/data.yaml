@@ -1,0 +1,14 @@
+names:
+- head
+- inkstone
+- writing-brush
+nc: 3
+roboflow:
+  license: CC BY 4.0
+  project: writing-brush
+  url: https://universe.roboflow.com/project-0fmyo/writing-brush/dataset/2
+  version: 2
+  workspace: project-0fmyo
+test: test/images
+train: train/images
+val: valid/images
